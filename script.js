@@ -1,60 +1,85 @@
 'use strict';
 
-const CONTACT_LIST = [];
 const ERROR_MESSAGE = 'Заполните все поля, пожалуйста.🥺';
+const CONTACT_ITEM_SELECTOR = '.contact-item';
+const DELETE_BUTTON_CLASS = 'delete-button';
 
-refreshTable();
 
-document.querySelector('#table-element-phone').addEventListener('keyup', function () {
-    this.value = this.value.replace(/[^\d]/g, '');
-});
-document.querySelector('#table-element-name').addEventListener('keyup', function () {
-    this.value = this.value.replace(/[^A-Za-zА-Яа-яЁёІі\s]/g, '');
-});
-document.querySelector('#table-element-surname').addEventListener('keyup', function () {
-    this.value = this.value.replace(/[^A-Za-zА-Яа-яЁёІі\s]/g, '');
-});
+const contactForm = document.querySelector('#contact-form');
+const inputs = document.querySelectorAll('.form-input');
+const contactItemTemplate = document.querySelector('#contactItemTemplate').innerHTML;
+const contactList = document.querySelector("#contact-list");
 
-document.getElementById('add-to-table-button').addEventListener('click', onAddToTableClick);
+contactForm.addEventListener('submit', onContactBtnSubmit);
 
-function onAddToTableClick() {
-    const nameInput = document.getElementById('table-element-name');
-    const surnameInput = document.getElementById('table-element-surname');
-    const phoneInput = document.getElementById('table-element-phone');
+contactList.addEventListener('click', onContactListClick)
 
-    const elementFormName = nameInput.value.trim();
-    const elementFormSurname = surnameInput.value.trim();
-    const elementFormPhone = phoneInput.value.trim();
+function onContactBtnSubmit(e) {
+    e.preventDefault();
 
-    if (elementFormName.length && elementFormSurname.length && elementFormPhone.length) {
-        CONTACT_LIST.push({
-            name: nameInput.value,
-            surname: surnameInput.value,
-            phone: phoneInput.value
-        });
+    const contact = getContact();
 
-        nameInput.value = '';
-        surnameInput.value = '';
-        phoneInput.value = '';
-
-        refreshTable();
+    if (!isContactValid(contact)) {
+       warning();
+        return;
     }
-    else {
-        alert(ERROR_MESSAGE);
+
+    addNewContact(contact);
+    clearContact();
+}
+
+function onContactListClick(event) {
+    if (event.target.classList.contains(DELETE_BUTTON_CLASS)) {
+        const contactItem = getContactItem(event.target);
+
+        removeContact(contactItem);
     }
 }
 
-function refreshTable() {
-    const tbody = document.getElementById("tbody");
-    tbody.innerHTML = '';
-    for (const contact of CONTACT_LIST) {
-        const row = document.createElement('tr');
-        for (const propertyName in contact) {
-            const tableCell = document.createElement('td');
-            tableCell.innerText = contact[propertyName];
+function getContact() {
+    const contact = {};
 
-            row.appendChild(tableCell);
-        }
-        tbody.appendChild(row);
+    inputs.forEach(input => {
+        contact[input.name] = input.value;
+    })
+
+    return contact;
+}
+
+function isContactValid(contact) {
+    return !isEmpty(contact.name)
+        && !isEmpty(contact.surname)
+        && isPhone(contact.phone)
+}
+
+function isPhone(phone) {
+    return !isEmpty(phone) && !isNaN(phone);
+}
+
+function isEmpty(str) {
+    return typeof str === 'string' && str.trim() === '';
+}
+
+function addNewContact(contact) {
+    let contactItemHTML = contactItemTemplate;
+    for (let property in contact) {
+        contactItemHTML = contactItemHTML.replace(`{{${property}}}`, contact[property]);
     }
+    contactList.insertAdjacentHTML('beforeend', contactItemHTML);
+}
+
+function clearContact() {
+    contactForm.reset();
+}
+
+function getContactItem(el) {
+    return el.closest(CONTACT_ITEM_SELECTOR);
+}
+
+function removeContact(contactItem) {
+    contactItem.remove();
+}
+
+function warning() {
+    alert(ERROR_MESSAGE);
 }
